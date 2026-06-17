@@ -1,4 +1,4 @@
-import type { TargetSpan } from "../editor/EditorView";
+import type { TargetSpan } from "../editor/types";
 
 // Live beacon: the first remaining difference between the buffer and the target,
 // classified into a colored job. Because it's recomputed from the current

@@ -2,6 +2,7 @@ import { EditorView } from "../editor/EditorView";
 import type { EditorState } from "../editor/types";
 import { checkGoal, type Lesson } from "./lessons";
 import { renderMarkup } from "../app/markup";
+import { escapeHtml } from "../app/html";
 
 export interface LessonViewCallbacks {
   onComplete: (lessonId: string) => void;
@@ -135,11 +136,4 @@ export class LessonView {
   destroy(): void {
     /* nothing to clean up */
   }
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }

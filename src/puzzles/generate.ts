@@ -1,5 +1,5 @@
 import type { Puzzle } from "./puzzles";
-import type { TargetSpan } from "../editor/EditorView";
+import type { TargetSpan } from "../editor/types";
 
 const tspan = (
   row: number,

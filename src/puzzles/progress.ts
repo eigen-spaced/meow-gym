@@ -1,4 +1,4 @@
-import type { TargetSpan } from "../editor/EditorView";
+import type { TargetSpan } from "../editor/types";
 
 // The shared color legend for highlighted jobs, used everywhere highlights show.
 const LEGEND_CHIPS: Record<string, string> = {

@@ -2,6 +2,9 @@ import { EditorView } from "../editor/EditorView";
 import type { EditorState } from "../editor/types";
 import { blockBar, legendHtml, legendHtmlFromCls } from "./progress";
 import { nextBeacon } from "./diff";
+import { gradeGauntlet } from "./grading";
+import { escapeHtml } from "../app/html";
+import { loadJson, saveJson } from "../app/storage";
 import {
   checkPuzzle,
   tasksOf,
@@ -10,38 +13,13 @@ import {
   type PuzzleTask,
 } from "./puzzles";
 
-function bestKey(groupId: string): string {
-  return `meow-gym.gauntlet.best.${groupId}`;
-}
-function loadBest(groupId: string): number | null {
-  try {
-    const raw = localStorage.getItem(bestKey(groupId));
-    return raw ? Number(raw) : null;
-  } catch {
-    return null;
-  }
-}
-function saveBest(groupId: string, ms: number): void {
-  try {
-    localStorage.setItem(bestKey(groupId), String(ms));
-  } catch {
-    /* ignore */
-  }
-}
+const bestKey = (groupId: string) => `meow-gym.gauntlet.best.${groupId}`;
+const loadBest = (groupId: string) =>
+  loadJson<number | null>(bestKey(groupId), null);
+const saveBest = (groupId: string, ms: number) => saveJson(bestKey(groupId), ms);
+
 function fmtMs(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
-}
-
-interface Rank {
-  grade: string;
-  title: string;
-}
-function rankFor(totalMs: number, targetMs: number, title: string): Rank {
-  const r = totalMs / targetMs;
-  if (r <= 1.1) return { grade: "S", title };
-  if (r <= 1.6) return { grade: "A", title: "Black belt" };
-  if (r <= 2.4) return { grade: "B", title: "Getting there" };
-  return { grade: "C", title: "Keep training" };
 }
 
 /**
@@ -99,8 +77,8 @@ export class GauntletView {
     return Array.from({ length: rounds }, (_, i) => this.group.generate!(i));
   }
 
-  private targetMs(): number {
-    return this.stages.reduce((sum, p) => sum + p.par, 0) * 350;
+  private totalPar(): number {
+    return this.stages.reduce((sum, p) => sum + p.par, 0);
   }
 
   private build(): void {
@@ -297,7 +275,7 @@ export class GauntletView {
     if (isBest) saveBest(this.group.id, total);
 
     const masterTitle = `🥋 ${this.group.title} of meow`;
-    const rank = rankFor(total, this.targetMs(), masterTitle);
+    const rank = gradeGauntlet(total, this.totalPar(), masterTitle);
     this.stageEl.textContent = "";
     this.instrEl.textContent = "";
     this.legendEl.innerHTML = "";
@@ -320,11 +298,4 @@ export class GauntletView {
   destroy(): void {
     window.clearInterval(this.tick);
   }
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }

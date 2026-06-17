@@ -4,63 +4,30 @@ import { LessonView } from "./lessons/LessonView";
 import { GROUPS } from "./puzzles/puzzles";
 import { GroupView } from "./puzzles/GroupView";
 import { GauntletView } from "./puzzles/GauntletView";
-import { KEYMAP } from "./app/keymap";
+import { keymapView } from "./app/KeymapView";
 import { getRelativeNumbers, setRelativeNumbers } from "./app/settings";
+import { loadJson, saveJson } from "./app/storage";
 
 type Route = "tutor" | "puzzles" | "keymap";
 
 const PROGRESS_KEY = "meow-gym.completed";
 const PUZZLE_PROGRESS_KEY = "meow-gym.puzzles.completed";
+const NAV_KEY = "meow-gym.nav";
 
-function loadSet(key: string): Set<string> {
-  try {
-    const raw = localStorage.getItem(key);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function saveSet(key: string, done: Set<string>): void {
-  try {
-    localStorage.setItem(key, JSON.stringify([...done]));
-  } catch {
-    /* ignore */
-  }
-}
+const loadSet = (key: string) => new Set(loadJson<string[]>(key, []));
+const saveSet = (key: string, s: Set<string>) => saveJson(key, [...s]);
 
 const loadProgress = () => loadSet(PROGRESS_KEY);
 const saveProgress = (done: Set<string>) => saveSet(PROGRESS_KEY, done);
 
-const NAV_KEY = "meow-gym.nav";
 interface Nav {
   route: Route;
   lessonIndex: number;
   groupIndex: number;
 }
-function loadNav(): Nav {
-  try {
-    const raw = localStorage.getItem(NAV_KEY);
-    if (raw) {
-      const n = JSON.parse(raw) as Partial<Nav>;
-      return {
-        route: n.route ?? "tutor",
-        lessonIndex: n.lessonIndex ?? 0,
-        groupIndex: n.groupIndex ?? 0,
-      };
-    }
-  } catch {
-    /* ignore */
-  }
-  return { route: "tutor", lessonIndex: 0, groupIndex: 0 };
-}
-function saveNav(n: Nav): void {
-  try {
-    localStorage.setItem(NAV_KEY, JSON.stringify(n));
-  } catch {
-    /* ignore */
-  }
-}
+const DEFAULT_NAV: Nav = { route: "tutor", lessonIndex: 0, groupIndex: 0 };
+const loadNav = (): Nav => ({ ...DEFAULT_NAV, ...loadJson(NAV_KEY, {}) });
+const saveNav = (n: Nav) => saveJson(NAV_KEY, n);
 
 class App {
   private root: HTMLElement;
@@ -299,46 +266,8 @@ class App {
   // --- Keymap reference ----------------------------------------------------
 
   private keymapBody(): HTMLElement {
-    const main = document.createElement("main");
-    main.className = "content";
-
-    const h = document.createElement("h2");
-    h.textContent = "C-h b · describe-bindings";
-    const p = document.createElement("p");
-    p.className = "muted";
-    p.innerHTML =
-      "The full meow QWERTY normal-state keymap. The <span class='vim-badge'>vim habit</span> column flags keys where your old reflexes will lead you astray.";
-    main.append(h, p);
-
-    const table = document.createElement("table");
-    table.className = "keymap";
-    table.innerHTML = `
-      <thead><tr><th>Key</th><th>Command</th><th>meow does</th><th>vim habit</th></tr></thead>
-    `;
-    const tbody = document.createElement("tbody");
-    for (const b of KEYMAP) {
-      const tr = document.createElement("tr");
-      const trap = b.vim && !/same|similar/.test(b.vim);
-      tr.innerHTML =
-        `<td><kbd>${escapeHtml(b.key)}</kbd></td>` +
-        `<td><code>${escapeHtml(b.command)}</code></td>` +
-        `<td>${escapeHtml(b.desc)}</td>` +
-        `<td class="${trap ? "trap" : "muted"}">${
-          b.vim ? escapeHtml(b.vim) : "—"
-        }</td>`;
-      tbody.append(tr);
-    }
-    table.append(tbody);
-    main.append(table);
-    return main;
+    return keymapView();
   }
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }
 
 const root = document.getElementById("app");

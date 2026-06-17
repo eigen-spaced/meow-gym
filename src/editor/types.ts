@@ -7,6 +7,14 @@ export interface Pos {
   col: number;
 }
 
+/** A half-open [start, end) span to highlight as a goal target in the buffer. */
+export interface TargetSpan {
+  start: Pos;
+  end: Pos;
+  /** Optional CSS class for color-coding the job (t-del / t-fix / t-yank …). */
+  cls?: string;
+}
+
 /**
  * meow is selection-first: nearly every command acts on the current selection.
  * We model a selection as two ends — `anchor` (fixed) and `active` (the moving

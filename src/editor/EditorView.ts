@@ -1,7 +1,8 @@
 import { MeowEngine } from "./meow";
-import type { EditorState, Pos, VimHint } from "./types";
+import type { EditorState, Pos, TargetSpan, VimHint } from "./types";
 import { KEYMAP } from "../app/keymap";
 import { getRelativeNumbers } from "../app/settings";
+import { escapeHtml } from "../app/html";
 
 function cmp(a: Pos, b: Pos): number {
   return a.row !== b.row ? a.row - b.row : a.col - b.col;
@@ -9,13 +10,6 @@ function cmp(a: Pos, b: Pos): number {
 
 const COMMAND_BY_KEY = new Map(KEYMAP.map((b) => [b.key, b.command]));
 
-/** A half-open [start, end) span to highlight as a goal target in the buffer. */
-export interface TargetSpan {
-  start: Pos;
-  end: Pos;
-  /** Optional CSS class for color-coding the job (t-del / t-fix / t-yank). */
-  cls?: string;
-}
 
 export interface EditorViewOptions {
   lines: string[];
@@ -25,8 +19,6 @@ export interface EditorViewOptions {
   targets?: TargetSpan[];
   /** Called after every handled key, with the fresh state. */
   onChange?: (state: EditorState) => void;
-  /** Called when a vim muscle-memory key is pressed. */
-  onVimHint?: (hint: VimHint) => void;
   /** Called for every handled keystroke (the raw key). For scoring/timing. */
   onKey?: (key: string) => void;
   /** Show "you're thinking in vim" nudges in the echo area. Default true. */
@@ -135,7 +127,6 @@ export class EditorView {
 
     if (result.vimHint && this.opts.vimHints !== false) {
       this.echoVimHint(result.vimHint);
-      this.opts.onVimHint?.(result.vimHint);
     } else if (result.echo) {
       this.setEcho(`<span class="echo-prompt">${escapeHtml(result.echo)}</span>`, "info");
     }
@@ -251,11 +242,4 @@ export class EditorView {
     const here = { row, col };
     return cmp(sel.start, here) <= 0 && cmp(here, sel.end) < 0;
   }
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }

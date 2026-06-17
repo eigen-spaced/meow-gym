@@ -1,9 +1,6 @@
-import type { EditorState } from "../editor/types";
+import { checkGoal, type Goal } from "../editor/goals";
 
-export type Goal =
-  | { type: "text"; target: string[] }
-  | { type: "cursor"; row: number; col: number }
-  | { type: "contains"; text: string };
+export { checkGoal, type Goal };
 
 export interface KeyRef {
   key: string;
@@ -22,30 +19,6 @@ export interface Lesson {
   goal: Goal;
   /** Plain-language description of the objective. */
   goalText: string;
-}
-
-// --- goal checking --------------------------------------------------------
-
-function normalize(lines: string[]): string[] {
-  const trimmed = lines.map((l) => l.trim());
-  while (trimmed.length > 1 && trimmed[trimmed.length - 1] === "") {
-    trimmed.pop();
-  }
-  return trimmed;
-}
-
-export function checkGoal(goal: Goal, state: EditorState): boolean {
-  switch (goal.type) {
-    case "text": {
-      const a = normalize(state.lines);
-      const b = normalize(goal.target);
-      return a.length === b.length && a.every((l, i) => l === b[i]);
-    }
-    case "cursor":
-      return state.active.row === goal.row && state.active.col === goal.col;
-    case "contains":
-      return state.lines.join("\n").includes(goal.text);
-  }
 }
 
 // --- the curriculum -------------------------------------------------------

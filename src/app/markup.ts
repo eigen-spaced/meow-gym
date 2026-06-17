@@ -1,12 +1,7 @@
 // A deliberately tiny, safe Markdown subset for lesson prose.
 // Supports: paragraphs, "- " bullet lists, `inline code`, and **bold**.
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
+import { escapeHtml } from "./html";
 
 function inlineFormat(s: string): string {
   return escapeHtml(s)

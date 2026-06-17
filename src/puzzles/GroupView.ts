@@ -1,5 +1,6 @@
 import { PuzzleView } from "./PuzzleView";
 import { blockBar } from "./progress";
+import { escapeHtml } from "../app/html";
 import type { Puzzle, PuzzleGroup } from "./puzzles";
 
 export interface GroupViewCallbacks {
@@ -133,11 +134,4 @@ export class GroupView {
   destroy(): void {
     this.active?.destroy();
   }
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }

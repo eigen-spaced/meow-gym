@@ -1,44 +1,20 @@
 import { EditorView } from "../editor/EditorView";
-import type { TargetSpan } from "../editor/EditorView";
-import type { EditorState } from "../editor/types";
-import {
-  checkPuzzle,
-  gradeRun,
-  tasksOf,
-  type Puzzle,
-  type PuzzleTask,
-  type Score,
-} from "./puzzles";
+import type { EditorState, TargetSpan } from "../editor/types";
+import { checkPuzzle, tasksOf, type Puzzle, type PuzzleTask } from "./puzzles";
+import { gradeRun, type Score } from "./grading";
 import { legendHtml, legendHtmlFromCls } from "./progress";
 import { nextBeacon } from "./diff";
+import { escapeHtml } from "../app/html";
+import { loadJson, saveJson } from "../app/storage";
 
 interface Best {
   keys: number;
   ms: number;
 }
 
-function bestKey(id: string): string {
-  return `meow-gym.best.${id}`;
-}
-function loadBest(id: string): Best | null {
-  try {
-    const raw = localStorage.getItem(bestKey(id));
-    return raw ? (JSON.parse(raw) as Best) : null;
-  } catch {
-    return null;
-  }
-}
-function saveBest(id: string, b: Best): void {
-  try {
-    localStorage.setItem(bestKey(id), JSON.stringify(b));
-  } catch {
-    /* ignore */
-  }
-}
-
-function fmtMs(ms: number): string {
-  return `${(ms / 1000).toFixed(1)}s`;
-}
+const bestKey = (id: string) => `meow-gym.best.${id}`;
+const loadBest = (id: string) => loadJson<Best | null>(bestKey(id), null);
+const saveBest = (id: string, b: Best) => saveJson(bestKey(id), b);
 
 export interface PuzzleViewCallbacks {
   /** Called when this puzzle is solved (with its id, for progress tracking). */
@@ -64,7 +40,6 @@ export class PuzzleView {
   private keys = 0;
   private movementKeys = 0;
   private startMs: number | null = null;
-  private tick?: number;
   private done = false;
 
   constructor(
@@ -111,7 +86,6 @@ export class PuzzleView {
     blurb.textContent = p.blurb;
     this.el.append(blurb);
 
-    // Color legend for highlighted jobs.
     const legend = this.diffMode
       ? legendHtmlFromCls(p.legendCls ?? [])
       : legendHtml(this.tasks.flatMap((t) => t.targets ?? []));
@@ -123,10 +97,7 @@ export class PuzzleView {
     }
 
     // Target reference panel — only for puzzles that reproduce a target text.
-    const showTarget =
-      !!p.target &&
-      (p.kind === "fix" || p.kind === "golf" || p.kind === "timed");
-    if (showTarget && p.target) {
+    if (p.target && (p.kind === "fix" || p.kind === "golf")) {
       const target = document.createElement("div");
       target.className = "target-panel";
       target.innerHTML =
@@ -174,7 +145,6 @@ export class PuzzleView {
     this.taskStartBuf = this.puzzle.buffer.join("\n");
     this.startMs = null;
     this.done = false;
-    window.clearInterval(this.tick);
     this.editor.reset(this.puzzle.buffer);
     this.editor.setTargets(
       this.diffMode ? this.beacon(this.puzzle.buffer) : this.currentTargets(),
@@ -187,16 +157,9 @@ export class PuzzleView {
     this.editor.focus();
   }
 
-  private elapsed(): number {
-    return this.startMs === null ? 0 : Date.now() - this.startMs;
-  }
-
   private onKey(key: string): void {
     if (this.done) return;
-    if (this.startMs === null) {
-      this.startMs = Date.now();
-      this.tick = window.setInterval(() => this.renderHud(), 100);
-    }
+    if (this.startMs === null) this.startMs = Date.now();
     this.keys++;
     if (key === "h" || key === "j" || key === "k" || key === "l") {
       this.movementKeys++;
@@ -207,18 +170,10 @@ export class PuzzleView {
   private renderHud(): void {
     const p = this.puzzle;
     const best = loadBest(p.id);
-    const timer = p.kind === "timed";
     this.hudEl.innerHTML =
       `<span class="hud-item">keys <b>${this.keys}</b></span>` +
-      (timer
-        ? `<span class="hud-item">time <b>${fmtMs(this.elapsed())}</b></span>`
-        : "") +
       `<span class="hud-item hud-dim">par ${p.par}</span>` +
-      (best
-        ? `<span class="hud-item hud-dim">best ${best.keys} keys${
-            p.kind === "timed" ? ` · ${fmtMs(best.ms)}` : ""
-          }</span>`
-        : "");
+      (best ? `<span class="hud-item hud-dim">best ${best.keys} keys</span>` : "");
   }
 
   private onChange(state: EditorState): void {
@@ -251,12 +206,11 @@ export class PuzzleView {
 
   private finish(): void {
     this.done = true;
-    window.clearInterval(this.tick);
-    const ms = this.elapsed();
+    const ms = this.startMs === null ? 0 : Date.now() - this.startMs;
     const score = gradeRun(this.puzzle.par, this.keys, this.movementKeys);
     this.recordBest(ms);
     this.renderHud();
-    this.renderResult(score, ms);
+    this.renderResult(score);
     this.nextBtn.disabled = false;
     this.nextBtn.classList.add("ready");
     this.editor.setEcho('<span class="echo-ok">Solved.</span>', "info");
@@ -265,6 +219,7 @@ export class PuzzleView {
 
   private recordBest(ms: number): void {
     const prev = loadBest(this.puzzle.id);
+    // Best = fewest keys; ties broken by faster time.
     if (
       !prev ||
       this.keys < prev.keys ||
@@ -274,27 +229,18 @@ export class PuzzleView {
     }
   }
 
-  private renderResult(score: Score, ms: number): void {
+  private renderResult(score: Score): void {
     const p = this.puzzle;
     this.resultEl.className = `result result-show grade-${score.grade}`;
     this.resultEl.innerHTML =
       `<div class="result-grade">${score.grade}</div>` +
       `<div class="result-body">` +
-      `<div class="result-line"><b>Solved</b> — ${score.keys} keys` +
-      `${p.kind === "timed" ? ` in ${fmtMs(ms)}` : ""}` +
-      ` (par ${p.par}).</div>` +
+      `<div class="result-line"><b>Solved</b> — ${score.keys} keys (par ${p.par}).</div>` +
       (score.note ? `<div class="result-note">${escapeHtml(score.note)}</div>` : "") +
       `</div>`;
   }
 
   destroy(): void {
-    window.clearInterval(this.tick);
+    /* nothing to clean up */
   }
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }
