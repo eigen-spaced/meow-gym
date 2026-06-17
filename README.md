@@ -57,24 +57,29 @@ pnpm verify      # drive lessons & puzzles through the engine, assert they solve
 ```
 src/
   editor/
-    types.ts        # buffer / selection / mode model
+    types.ts        # buffer / selection / mode model + TargetSpan
+    goals.ts        # the Goal model + checkGoal (shared by lessons & puzzles)
     meow.ts         # the engine: meow's selection-first commands, modes, undo
     vimKeys.ts      # the "you're thinking in vim" hint map
     EditorView.ts   # focusable Emacs-frame widget (buffer + modeline + echo)
   lessons/
-    lessons.ts      # the curriculum + goal-checking
+    lessons.ts      # the curriculum
     LessonView.ts
   puzzles/
-    puzzles.ts      # puzzle groups + grading
+    puzzles.ts      # puzzle groups + data + goal-checking
     generate.ts     # procedural puzzle generators (fix, oogway, gauntlet, …)
     diff.ts         # live diff → next beacon (drives multi-defect puzzles)
+    grading.ts      # scoring: gradeRun (keys) + gradeGauntlet (time)
+    progress.ts     # block progress bar + color legend
     PuzzleView.ts   # a single puzzle
     GroupView.ts    # a themed/endless group of puzzles
     GauntletView.ts # the timed gauntlets (Master Shifu / Master Oogway)
-    progress.ts     # block progress bar + color legend
   app/
-    keymap.ts       # full QWERTY keymap data (reference page)
+    keymap.ts       # full QWERTY keymap data
+    KeymapView.ts   # the C-h b reference page
     markup.ts       # tiny safe markdown subset for lesson prose
+    html.ts         # escapeHtml
+    storage.ts      # guarded localStorage JSON helpers
     settings.ts     # persisted UI settings (relative line numbers)
   main.ts           # app shell: nav, sidebars, routing, progress persistence
   style.css
