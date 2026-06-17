@@ -22,8 +22,12 @@ export interface Lesson {
 }
 
 // --- the curriculum -------------------------------------------------------
+// Ordered in thematic blocks: basics → insert → delete a char → selection
+// (build & refine) → acting on a selection (change/copy/replace) → advanced
+// motions & objects.
 
 export const LESSONS: Lesson[] = [
+  // --- basics ---
   {
     id: "modes",
     title: "1 · Modes & typing",
@@ -55,24 +59,11 @@ export const LESSONS: Lesson[] = [
     goal: { type: "cursor", row: 2, col: 4 },
     goalText: "Move the cursor so the block sits on the X (row 3, column 5).",
   },
-  {
-    id: "delete-char",
-    title: "3 · Deleting a character",
-    intro:
-      "With nothing selected, `d` deletes the single character under the cursor.\n\nThe word below has a typo — an extra letter. Land on it and delete it.",
-    vimNote:
-      "In vim you'd press `x` to delete a char. Try `x` here and watch what meow does instead — then use `d`.",
-    keys: [
-      { key: "d", desc: "delete char under cursor (no selection)" },
-      { key: "h j k l", desc: "move" },
-    ],
-    buffer: ["meeow makes a great editor"],
-    goal: { type: "text", target: ["meow makes a great editor"] },
-    goalText: 'Turn "meeow" into "meow" by deleting the extra e.',
-  },
+
+  // --- insert, then delete a character ---
   {
     id: "append",
-    title: "4 · Inserting in more places",
+    title: "3 · Inserting in more places",
     intro:
       "Insert mode has several doors:\n- `i` insert at the cursor / start of selection\n- `a` append after the cursor / end of selection\n- `I` open a new line **above**\n- `A` open a new line **below**\n\nAdd a second line beneath the first.",
     vimNote:
@@ -86,6 +77,23 @@ export const LESSONS: Lesson[] = [
     goal: { type: "text", target: ["roses are red", "violets are blue"] },
     goalText: 'Use A to add a line below, then type "violets are blue".',
   },
+  {
+    id: "delete-char",
+    title: "4 · Deleting a character",
+    intro:
+      "With nothing selected, `d` deletes the single character under the cursor.\n\nThe word below has a typo — an extra letter. Land on it and delete it.",
+    vimNote:
+      "In vim you'd press `x` to delete a char. Try `x` here and watch what meow does instead — then use `d`.",
+    keys: [
+      { key: "d", desc: "delete char under cursor (no selection)" },
+      { key: "h j k l", desc: "move" },
+    ],
+    buffer: ["meeow makes a great editor"],
+    goal: { type: "text", target: ["meow makes a great editor"] },
+    goalText: 'Turn "meeow" into "meow" by deleting the extra e.',
+  },
+
+  // --- selection: build & refine ---
   {
     id: "word-kill",
     title: "5 · Select a word, then kill it",
@@ -136,13 +144,12 @@ export const LESSONS: Lesson[] = [
     id: "extend",
     title: "8 · Extending a selection",
     intro:
-      "Selections grow. After a word selection, pressing `e` again extends it to the next word. You can also expand character-by-character with `H J K L` (the shifted movement keys), and flip which end you're editing with `;`.\n\nThree junk words lead the line. Select all three at once, then kill them.",
+      "Selections grow. After a word selection, pressing `e` again extends it to the next word. You can also expand character-by-character with `H J K L` (the shifted movement keys).\n\nThree junk words lead the line. Select all three at once, then kill them.",
     vimNote:
       "There's no `d3w` here. You build the selection up visibly with repeated `e`, then strike with `s`. What you select is what you get.",
     keys: [
       { key: "e", desc: "extend to next word" },
       { key: "H J K L", desc: "expand by character" },
-      { key: ";", desc: "reverse the selection" },
       { key: "s", desc: "kill" },
     ],
     buffer: ["junk junk junk keep this part"],
@@ -150,8 +157,26 @@ export const LESSONS: Lesson[] = [
     goalText: 'Select the three "junk" words with e, e, e and kill them.',
   },
   {
+    id: "expand",
+    title: "9 · Reverse & expand",
+    intro:
+      "Once you have a selection, a **digit** `1`–`9` grows it by that many units of its kind — words for a word selection, lines for a line selection. And `;` reverses the selection, flipping which end the cursor is on so you can grow it the other way.\n\nDelete the first three lines in one go.",
+    vimNote:
+      "No `d3j` or `3dd`. You build the selection visibly — `x` then a number — then strike. What you see selected is exactly what gets killed.",
+    keys: [
+      { key: "x", desc: "select the line" },
+      { key: "1-9", desc: "expand by N units" },
+      { key: ";", desc: "reverse the selection" },
+    ],
+    buffer: ["line one", "line two", "line three", "keep this one"],
+    goal: { type: "text", target: ["keep this one"] },
+    goalText: "Select a line with x, press 3 to grab three lines, then s.",
+  },
+
+  // --- acting on a selection ---
+  {
     id: "change",
-    title: "9 · Change",
+    title: "10 · Change",
     intro:
       "`c` changes the selection: it deletes the selected text and drops you straight into Insert mode, ready to type the replacement.\n\nSwap one word for another below.",
     vimNote:
@@ -167,7 +192,7 @@ export const LESSONS: Lesson[] = [
   },
   {
     id: "yank",
-    title: "10 · Copy & paste",
+    title: "11 · Copy & paste",
     intro:
       "`y` saves (copies) the selection. `p` yanks it back — pastes at the cursor. Together with `x` (line select) you can duplicate a line fast.\n\nMake a second copy of the line below.",
     vimNote:
@@ -182,8 +207,26 @@ export const LESSONS: Lesson[] = [
     goalText: "Select the line with x, copy with y, paste a duplicate with p.",
   },
   {
+    id: "replace",
+    title: "12 · Replace",
+    intro:
+      "`r` replaces the current selection with whatever you last copied (`y`) or cut (`s`) — it pastes *over* the selection. Unlike `c`, you don't retype; unlike `p`, it overwrites instead of inserting.\n\nCopy one word and stamp it over another.",
+    vimNote:
+      "In vim `r` replaces a single character (`r` then the new char). In meow `r` overwrites the whole selection with the kill-ring — copy with `y` first, select a span, then `r`.",
+    keys: [
+      { key: "w", desc: "mark the word" },
+      { key: "y", desc: "save (copy) it" },
+      { key: "r", desc: "replace selection with the kill-ring" },
+    ],
+    buffer: ["copy dog onto cat"],
+    goal: { type: "text", target: ["copy dog onto dog"] },
+    goalText: 'Copy "dog" (w y), select "cat", then r to stamp "dog" over it.',
+  },
+
+  // --- advanced motions & objects ---
+  {
     id: "find",
-    title: "11 · Find & till",
+    title: "13 · Find & till",
     intro:
       "`f` then a character selects from the cursor up to **and including** the next occurrence of that character. `t` (till) selects up to but **not including** it.\n\nThe useful part for a vimmer: these *select*, so you can immediately act with `s`, `c`, or `d`.\n\nDelete everything up to and including the first comma below.",
     vimNote:
@@ -199,7 +242,7 @@ export const LESSONS: Lesson[] = [
   },
   {
     id: "things",
-    title: "12 · Text objects (things)",
+    title: "14 · Text objects (things)",
     intro:
       "meow's secret weapon. `,` selects the **inner** part of a *thing*; `.` selects its **bounds** (including the delimiters). After the prefix, name the thing:\n- `r` round `()` · `s` square `[]` · `c` curly `{}`\n- `g` a quoted string · `l` line · `p` paragraph · `b` whole buffer\n\nThe cursor is inside the parentheses below. Replace the contents.",
     vimNote:
@@ -213,38 +256,5 @@ export const LESSONS: Lesson[] = [
     buffer: ["call(old)"],
     goal: { type: "text", target: ["call(new)"] },
     goalText: 'Select inside the parens with , r, then change "old" to "new".',
-  },
-  {
-    id: "expand",
-    title: "13 · Reverse & expand",
-    intro:
-      "Once you have a selection, a **digit** `1`–`9` grows it by that many units of its kind — words for a word selection, lines for a line selection. And `;` reverses the selection, flipping which end the cursor is on so you can grow it the other way.\n\nDelete the first three lines in one go.",
-    vimNote:
-      "No `d3j` or `3dd`. You build the selection visibly — `x` then a number — then strike. What you see selected is exactly what gets killed.",
-    keys: [
-      { key: "x", desc: "select the line" },
-      { key: "1-9", desc: "expand by N units" },
-      { key: ";", desc: "reverse the selection" },
-      { key: "H J K L", desc: "expand by one character" },
-    ],
-    buffer: ["line one", "line two", "line three", "keep this one"],
-    goal: { type: "text", target: ["keep this one"] },
-    goalText: "Select a line with x, press 3 to grab three lines, then s.",
-  },
-  {
-    id: "replace",
-    title: "14 · Replace",
-    intro:
-      "`r` replaces the current selection with whatever you last copied (`y`) or cut (`s`) — it pastes *over* the selection. Unlike `c`, you don't retype; unlike `p`, it overwrites instead of inserting.\n\nCopy one word and stamp it over another.",
-    vimNote:
-      "In vim `r` replaces a single character (`r` then the new char). In meow `r` overwrites the whole selection with the kill-ring — copy with `y` first, select a span, then `r`.",
-    keys: [
-      { key: "w", desc: "mark the word" },
-      { key: "y", desc: "save (copy) it" },
-      { key: "r", desc: "replace selection with the kill-ring" },
-    ],
-    buffer: ["copy dog onto cat"],
-    goal: { type: "text", target: ["copy dog onto dog"] },
-    goalText: 'Copy "dog" (w y), select "cat", then r to stamp "dog" over it.',
   },
 ];
