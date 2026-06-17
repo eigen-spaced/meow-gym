@@ -1,17 +1,11 @@
 import { EditorView } from "../editor/EditorView";
 import type { EditorState } from "../editor/types";
-import { blockBar, legendHtml, legendHtmlFromCls } from "./progress";
-import { nextBeacon } from "./diff";
+import { blockBar, legendHtmlFromCls } from "./progress";
+import { PuzzleRunner } from "./PuzzleRunner";
 import { gradeGauntlet } from "./grading";
 import { escapeHtml } from "../app/html";
 import { loadJson, saveJson } from "../app/storage";
-import {
-  checkPuzzle,
-  tasksOf,
-  type Puzzle,
-  type PuzzleGroup,
-  type PuzzleTask,
-} from "./puzzles";
+import { type Puzzle, type PuzzleGroup } from "./puzzles";
 
 const bestKey = (groupId: string) => `meow-gym.gauntlet.best.${groupId}`;
 const loadBest = (groupId: string) =>
@@ -40,13 +34,7 @@ export class GauntletView {
 
   private stages: Puzzle[];
   private index = 0;
-  private tasks: PuzzleTask[] = [];
-  private taskIndex = 0;
-  /** Buffer text when the current beacon was shown — to detect edits. */
-  private taskStartBuf = "";
-  /** Diff mode (multi-defect text passages): beacon derived live from the diff. */
-  private diffMode = false;
-  private diffTarget: string[] = [];
+  private runner: PuzzleRunner;
   private keys = 0;
   private startMs: number | null = null;
   private tick?: number;
@@ -54,6 +42,7 @@ export class GauntletView {
 
   constructor(private group: PuzzleGroup) {
     this.stages = this.buildStages();
+    this.runner = new PuzzleRunner(this.stages[0]);
 
     this.el = document.createElement("div");
     this.el.className = "lesson";
@@ -61,7 +50,7 @@ export class GauntletView {
     this.editor = new EditorView({
       lines: this.stages[0].buffer,
       bufferName: "*gauntlet*",
-      targets: tasksOf(this.stages[0])[0]?.targets,
+      targets: this.runner.initialTargets(),
       vimHints: false, // the gauntlets are a test, not a tutorial
       onKey: () => this.onKey(),
       onChange: (s) => this.onChange(s),
@@ -151,26 +140,12 @@ export class GauntletView {
 
   private mountStage(i: number, keepFocus = true): void {
     const p = this.stages[i];
+    this.runner = new PuzzleRunner(p);
     this.editor.reset(p.buffer);
+    this.editor.setTargets(this.runner.initialTargets());
     this.stageEl.textContent = `${i + 1}/${this.stages.length} · ${p.title}`;
-    this.diffMode = !!p.diff;
-
-    if (this.diffMode) {
-      this.diffTarget = p.target ?? [];
-      const b = nextBeacon(p.buffer, this.diffTarget);
-      this.editor.setTargets(b ? [b] : []);
-      this.legendEl.innerHTML = legendHtmlFromCls(p.legendCls ?? []);
-      this.instrEl.textContent = p.blurb;
-    } else {
-      this.tasks = tasksOf(p);
-      this.taskIndex = 0;
-      this.editor.setTargets(this.tasks[0]?.targets ?? []);
-      this.taskStartBuf = p.buffer.join("\n");
-      this.legendEl.innerHTML = legendHtml(
-        this.tasks.flatMap((t) => t.targets ?? []),
-      );
-      this.renderInstr(p);
-    }
+    this.legendEl.innerHTML = legendHtmlFromCls(this.runner.legendCls());
+    this.renderInstr(p);
 
     if (p.target) {
       this.targetHost.innerHTML =
@@ -183,11 +158,10 @@ export class GauntletView {
   }
 
   private renderInstr(p: Puzzle): void {
-    const task = this.tasks[this.taskIndex];
-    if (this.tasks.length > 1 && task?.label) {
-      this.instrEl.textContent = `→ ${task.label}  ·  job ${this.taskIndex + 1}/${this.tasks.length}`;
+    if (this.runner.multiTask) {
+      this.instrEl.textContent = `→ ${this.runner.jobLabel ?? ""}  ·  job ${this.runner.jobIndex + 1}/${this.runner.jobCount}`;
     } else {
-      this.instrEl.textContent = task?.label ?? p.blurb;
+      this.instrEl.textContent = this.runner.jobLabel ?? p.blurb;
     }
   }
 
@@ -224,36 +198,14 @@ export class GauntletView {
 
   private onChange(state: EditorState): void {
     if (this.done) return;
-
-    if (this.diffMode) {
-      const b = nextBeacon(state.lines, this.diffTarget);
-      if (b) {
-        this.editor.setTargets([b]);
-        return;
-      }
+    const { targets, solved } = this.runner.step(state);
+    this.editor.setTargets(targets);
+    if (solved) {
       this.advanceStage();
-      return;
-    }
-
-    const task = this.tasks[this.taskIndex];
-    if (!task) return;
-    if (!checkPuzzle(task.goal, state)) {
-      // Once you start editing the beacon, clear it so the stale highlight
-      // doesn't overlap the shifted text.
-      if (state.lines.join("\n") !== this.taskStartBuf) this.editor.setTargets([]);
-      return;
-    }
-
-    this.taskIndex++;
-    if (this.taskIndex < this.tasks.length) {
-      // Reveal the next beacon in this passage.
-      this.editor.setTargets(this.tasks[this.taskIndex].targets ?? []);
-      this.taskStartBuf = state.lines.join("\n");
+    } else if (this.runner.multiTask) {
+      // The current job may have advanced — refresh the "job k/n" readout.
       this.renderInstr(this.stages[this.index]);
-      return;
     }
-
-    this.advanceStage();
   }
 
   private advanceStage(): void {

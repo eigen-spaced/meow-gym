@@ -1,9 +1,9 @@
 import { EditorView } from "../editor/EditorView";
-import type { EditorState, TargetSpan } from "../editor/types";
-import { checkPuzzle, tasksOf, type Puzzle, type PuzzleTask } from "./puzzles";
+import type { EditorState } from "../editor/types";
+import { type Puzzle } from "./puzzles";
+import { PuzzleRunner } from "./PuzzleRunner";
 import { gradeRun, type Score } from "./grading";
-import { legendHtml, legendHtmlFromCls } from "./progress";
-import { nextBeacon } from "./diff";
+import { legendHtmlFromCls } from "./progress";
 import { escapeHtml } from "../app/html";
 import { loadJson, saveJson } from "../app/storage";
 
@@ -28,15 +28,11 @@ export interface PuzzleViewCallbacks {
 export class PuzzleView {
   readonly el: HTMLDivElement;
   private editor: EditorView;
+  private runner: PuzzleRunner;
   private hudEl!: HTMLDivElement;
   private resultEl!: HTMLDivElement;
   private nextBtn!: HTMLButtonElement;
 
-  private tasks: PuzzleTask[];
-  private taskIndex = 0;
-  private taskStartBuf = "";
-  private readonly diffMode: boolean;
-  private diffTarget: string[];
   private keys = 0;
   private movementKeys = 0;
   private startMs: number | null = null;
@@ -46,10 +42,7 @@ export class PuzzleView {
     private puzzle: Puzzle,
     private cb: PuzzleViewCallbacks,
   ) {
-    this.tasks = tasksOf(puzzle);
-    this.taskStartBuf = puzzle.buffer.join("\n");
-    this.diffMode = !!puzzle.diff;
-    this.diffTarget = puzzle.target ?? [];
+    this.runner = new PuzzleRunner(puzzle);
 
     this.el = document.createElement("div");
     this.el.className = "puzzle";
@@ -57,25 +50,13 @@ export class PuzzleView {
     this.editor = new EditorView({
       lines: puzzle.buffer,
       bufferName: `*puzzle:${puzzle.id}*`,
-      targets: this.diffMode
-        ? this.beacon(puzzle.buffer)
-        : this.tasks[0]?.targets,
+      targets: this.runner.initialTargets(),
       onKey: (k) => this.onKey(k),
       onChange: (s) => this.onChange(s),
     });
 
     this.build();
     requestAnimationFrame(() => this.editor.focus());
-  }
-
-  private currentTargets(): TargetSpan[] {
-    return this.tasks[this.taskIndex]?.targets ?? [];
-  }
-
-  /** The live diff beacon for a buffer (diff puzzles), as a targets array. */
-  private beacon(lines: string[]): TargetSpan[] {
-    const b = nextBeacon(lines, this.diffTarget);
-    return b ? [b] : [];
   }
 
   private build(): void {
@@ -86,9 +67,7 @@ export class PuzzleView {
     blurb.textContent = p.blurb;
     this.el.append(blurb);
 
-    const legend = this.diffMode
-      ? legendHtmlFromCls(p.legendCls ?? [])
-      : legendHtml(this.tasks.flatMap((t) => t.targets ?? []));
+    const legend = legendHtmlFromCls(this.runner.legendCls());
     if (legend) {
       const legendEl = document.createElement("div");
       legendEl.className = "legend";
@@ -141,14 +120,11 @@ export class PuzzleView {
   private reset(): void {
     this.keys = 0;
     this.movementKeys = 0;
-    this.taskIndex = 0;
-    this.taskStartBuf = this.puzzle.buffer.join("\n");
     this.startMs = null;
     this.done = false;
+    this.runner.reset();
     this.editor.reset(this.puzzle.buffer);
-    this.editor.setTargets(
-      this.diffMode ? this.beacon(this.puzzle.buffer) : this.currentTargets(),
-    );
+    this.editor.setTargets(this.runner.initialTargets());
     this.resultEl.className = "result";
     this.resultEl.innerHTML = "";
     this.nextBtn.disabled = true;
@@ -178,30 +154,9 @@ export class PuzzleView {
 
   private onChange(state: EditorState): void {
     if (this.done) return;
-
-    if (this.diffMode) {
-      const b = this.beacon(state.lines);
-      this.editor.setTargets(b);
-      if (b.length === 0) this.finish();
-      return;
-    }
-
-    const before = this.taskIndex;
-    while (
-      this.taskIndex < this.tasks.length &&
-      checkPuzzle(this.tasks[this.taskIndex].goal, state)
-    ) {
-      this.taskIndex++;
-    }
-    if (this.taskIndex !== before) {
-      this.editor.setTargets(this.currentTargets());
-      this.taskStartBuf = state.lines.join("\n");
-    } else if (state.lines.join("\n") !== this.taskStartBuf) {
-      // Started editing the beacon — clear it to avoid stale overlap.
-      this.editor.setTargets([]);
-    }
-
-    if (this.taskIndex >= this.tasks.length) this.finish();
+    const { targets, solved } = this.runner.step(state);
+    this.editor.setTargets(targets);
+    if (solved) this.finish();
   }
 
   private finish(): void {
