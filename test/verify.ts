@@ -348,5 +348,23 @@ solveCheck("lisp-surgery", generateLispPuzzle, (p) => {
   }
 }
 
+// Contiguous diffs group into ONE beacon (so you select+act once).
+{
+  let bad = 0;
+  // "really quite" -> "the": one t-fix spanning both words (cols 2..14).
+  const f = nextBeacon(["a really quite b"], ["a the b"]);
+  if (!f || f.cls !== "t-fix" || f.start.col !== 2 || f.end.col !== 14) bad++;
+  // two adjacent extra words -> one t-del spanning both (cols 2..9).
+  const d = nextBeacon(["a foo bar b"], ["a b"]);
+  if (!d || d.cls !== "t-del" || d.start.col !== 2 || d.end.col !== 9) bad++;
+  if (bad === 0) {
+    pass++;
+    console.log("✓  adjacent diffs group into a single beacon");
+  } else {
+    fail++;
+    console.log(`✗  beacon grouping: ${bad} wrong`);
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail > 0) process.exit(1);

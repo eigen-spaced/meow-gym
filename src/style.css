@@ -284,9 +284,10 @@ kbd {
   box-shadow: inset 0 -2px 0 var(--purple);
 }
 .ch.target-hl.t-ins {
-  /* an insertion marker: a caret on the left edge, green */
-  background: transparent;
-  box-shadow: inset 2px 0 0 var(--green);
+  /* insertion marker: a green underline (a left caret would clash with the
+     magenta insert-mode cursor bar sitting right next to it) */
+  background: rgba(152, 190, 101, 0.12);
+  box-shadow: inset 0 -2px 0 var(--green);
 }
 
 /* Stacking order on a single cell: highlight tint < selection < cursor.
