@@ -1,0 +1,609 @@
+/*
+ * Emacs-y theme: flat, rectangular, monospace everywhere (it's all one buffer,
+ * really), a doom-one-ish dark palette, and an Emacs-purple accent.
+ * Deliberately almost no animation.
+ */
+:root {
+  --bg: #21242b;
+  --bg-soft: #1b1e23;
+  --bg-card: #23272e;
+  --border: #30343d;
+  --fg: #bbc2cf;
+  --fg-dim: #5b6268;
+  --purple: #a9a1e1; /* emacs/doom purple */
+  --magenta: #c678dd;
+  --green: #98be65;
+  --red: #ff6c6b;
+  --blue: #51afef;
+  --orange: #da8548;
+  --region: #3a3f4b;
+  --cursor: #bbc2cf; /* classic box cursor = foreground */
+  --mono: "SF Mono", "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", Menlo,
+    Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---- menu bar (topbar) ---- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-soft);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.brand {
+  font-weight: 700;
+  font-size: 15px;
+}
+.brand-cat {
+  margin-right: 4px;
+}
+.brand-sub {
+  color: var(--purple);
+  font-weight: 400;
+  font-size: 12px;
+  margin-left: 8px;
+}
+nav {
+  display: flex;
+  gap: 2px;
+}
+.tab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg-dim);
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  border-radius: 3px;
+}
+.tab:hover {
+  color: var(--fg);
+}
+.tab.active {
+  color: var(--bg);
+  background: var(--purple);
+  font-weight: 600;
+}
+
+/* ---- tutor layout ---- */
+.tutor-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  flex: 1;
+  min-height: 0;
+}
+.sidebar {
+  border-right: 1px solid var(--border);
+  background: var(--bg-soft);
+  padding: 14px 8px;
+  overflow-y: auto;
+}
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--fg-dim);
+  font-size: 12px;
+  padding: 0 8px 10px;
+}
+.progress-pill {
+  color: var(--green);
+}
+.lesson-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lesson-link {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--fg-dim);
+  padding: 5px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  border-radius: 3px;
+}
+.lesson-link:hover {
+  color: var(--fg);
+  background: var(--bg-card);
+}
+.lesson-link.active {
+  color: var(--fg);
+  background: var(--bg-card);
+  box-shadow: inset 2px 0 0 var(--purple);
+}
+.lesson-link .check {
+  color: var(--green);
+  width: 10px;
+}
+
+/* ---- content ---- */
+.content {
+  padding: 24px 32px;
+  max-width: 740px;
+  overflow-y: auto;
+}
+.content h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+.prose p {
+  margin: 0 0 10px;
+}
+.prose ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+.muted {
+  color: var(--fg-dim);
+}
+
+/* ---- vim note ---- */
+.vim-note {
+  border-left: 3px solid var(--orange);
+  background: var(--bg-soft);
+  padding: 10px 14px;
+  margin: 14px 0;
+  font-size: 13px;
+}
+.vim-badge {
+  color: var(--orange);
+  font-weight: 700;
+  font-size: 11px;
+  margin-right: 6px;
+}
+
+/* ---- key reference chips ---- */
+.keyref {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0;
+}
+.keyref-item {
+  border: 1px solid var(--border);
+  padding: 3px 9px;
+  font-size: 12px;
+  color: var(--fg-dim);
+  border-radius: 3px;
+}
+kbd {
+  font-family: var(--mono);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0 5px;
+  font-size: 0.9em;
+  color: var(--fg);
+}
+
+/* ---- goal ---- */
+.goal {
+  border-left: 3px solid var(--green);
+  padding: 7px 14px;
+  background: var(--bg-soft);
+  margin: 8px 0 14px;
+  font-size: 13px;
+}
+
+/* ---- the Emacs frame: buffer + modeline + echo area ---- */
+.editor-wrap {
+  margin: 6px 0;
+}
+.emacs-frame {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.editor {
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.6;
+  background: var(--bg-soft);
+  padding: 10px 12px;
+  white-space: pre;
+  outline: none;
+  cursor: text;
+  min-height: 56px;
+  caret-color: transparent;
+}
+.editor:focus {
+  background: #16181d;
+}
+.editor-line {
+  min-height: 1.6em;
+}
+.linenr {
+  color: var(--fg-dim);
+  user-select: none;
+  margin-right: 14px;
+  opacity: 0.6;
+}
+.linenr-cur {
+  color: var(--fg);
+  opacity: 1;
+}
+.ch {
+  white-space: pre;
+}
+/* Highlights are colored underlines + a faint tint, so text stays readable. */
+.ch.target-hl {
+  background: rgba(169, 161, 225, 0.1);
+  box-shadow: inset 0 -2px 0 var(--purple);
+}
+.ch.target-hl.t-del {
+  background: rgba(255, 108, 107, 0.1);
+  box-shadow: inset 0 -2px 0 var(--red);
+}
+.ch.target-hl.t-fix {
+  background: rgba(218, 133, 72, 0.12);
+  box-shadow: inset 0 -2px 0 var(--orange);
+}
+.ch.target-hl.t-yank {
+  background: rgba(81, 175, 239, 0.1);
+  box-shadow: inset 0 -2px 0 var(--blue);
+}
+.ch.target-hl.t-nav {
+  background: rgba(169, 161, 225, 0.1);
+  box-shadow: inset 0 -2px 0 var(--purple);
+}
+.ch.target-hl.t-ins {
+  /* an insertion marker: a caret on the left edge, green */
+  background: transparent;
+  box-shadow: inset 2px 0 0 var(--green);
+}
+
+/* Stacking order on a single cell: highlight tint < selection < cursor.
+   These selectors out-specify .ch.target-hl.t-* and are ordered after them, so
+   an active state is never hidden behind a job highlight. */
+.editor .ch.sel {
+  background: var(--region);
+}
+.editor .ch.cursor-block {
+  background: var(--cursor);
+  color: var(--bg-soft);
+}
+.editor .ch.cursor-bar {
+  background: transparent;
+  box-shadow: inset 2px 0 0 var(--magenta);
+}
+
+/* job legend (Oogway) */
+.legend {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  margin: 0 0 12px;
+  color: var(--fg-dim);
+}
+.legend .lg::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: baseline;
+}
+.lg-del::before {
+  background: var(--red);
+}
+.lg-fix::before {
+  background: var(--orange);
+}
+.lg-yank::before {
+  background: var(--blue);
+}
+.lg-ins::before {
+  background: var(--green);
+}
+.instr {
+  font-size: 13px;
+  color: var(--fg);
+  margin: 0 0 10px;
+  min-height: 18px;
+}
+.ch.sel {
+  background: var(--region);
+}
+.ch.cursor-block {
+  background: var(--cursor);
+  color: var(--bg-soft);
+}
+.ch.cursor-bar {
+  box-shadow: inset 2px 0 0 var(--magenta);
+}
+
+/* ---- modeline ---- */
+.modeline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #2a2e37;
+  border-top: 1px solid var(--border);
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--fg-dim);
+  user-select: none;
+}
+.modeline.ml-blur {
+  background: #23262d;
+  opacity: 0.7;
+}
+.ml-state {
+  font-weight: 700;
+  padding: 0 6px;
+  border-radius: 2px;
+  color: var(--bg-soft);
+}
+.ml-normal {
+  background: var(--green);
+}
+.ml-insert {
+  background: var(--orange);
+}
+.ml-mod {
+  color: var(--red);
+}
+.ml-buf {
+  color: var(--fg);
+  font-weight: 600;
+}
+.ml-spacer {
+  flex: 1;
+}
+
+/* ---- echo area / minibuffer ---- */
+.echo-area {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 4px 10px;
+  font-size: 12.5px;
+  min-height: 26px;
+  color: var(--fg-dim);
+}
+.echo-dim {
+  color: var(--fg-dim);
+}
+.echo-warn-tag {
+  color: var(--red);
+  font-weight: 700;
+  margin-right: 6px;
+}
+.echo-meow {
+  color: var(--green);
+}
+.echo-ok {
+  color: var(--green);
+  font-weight: 600;
+}
+.echo-area code {
+  color: var(--purple);
+}
+.echo-prompt {
+  color: var(--blue);
+}
+
+/* ---- status line ---- */
+.status {
+  min-height: 20px;
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+.status-ok {
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* ---- controls ---- */
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.btn {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--fg);
+  cursor: pointer;
+}
+.btn:hover {
+  border-color: var(--fg-dim);
+}
+.btn-primary.ready {
+  background: var(--purple);
+  color: var(--bg);
+  border-color: var(--purple);
+  font-weight: 600;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---- keymap table (C-h b) ---- */
+.keymap {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.keymap th,
+.keymap td {
+  text-align: left;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.keymap th {
+  color: var(--fg-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.keymap code {
+  font-size: 12px;
+  color: var(--purple);
+}
+.keymap .trap {
+  color: var(--red);
+}
+
+.placeholder ul {
+  line-height: 1.9;
+}
+
+/* ---- puzzles ---- */
+.progress {
+  margin: 6px 0 12px;
+}
+.stage-info {
+  font-size: 12px;
+  color: var(--purple);
+  margin: 0 0 12px;
+}
+.group-count {
+  margin-left: auto;
+  color: var(--fg-dim);
+  font-size: 11px;
+}
+.lesson-link {
+  /* allow the count to push to the right edge */
+  width: 100%;
+}
+.progress-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fg-dim);
+  margin-bottom: 6px;
+}
+.blocks {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.seg {
+  width: 22px;
+  height: 12px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--bg-soft);
+}
+.seg-on {
+  background: var(--green);
+  border-color: var(--green);
+}
+.target-panel {
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  margin: 10px 0;
+  background: var(--bg-soft);
+}
+.target-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fg-dim);
+  padding: 4px 12px;
+  border-bottom: 1px dashed var(--border);
+}
+.target-text {
+  margin: 0;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--green);
+  white-space: pre-wrap;
+}
+.hud {
+  display: flex;
+  gap: 18px;
+  margin: 10px 0;
+  font-size: 13px;
+  color: var(--fg);
+}
+.hud-item b {
+  color: var(--blue);
+}
+.hud-dim {
+  color: var(--fg-dim);
+}
+.hud-dim b {
+  color: var(--fg-dim);
+}
+
+.result {
+  display: none;
+}
+.result-show {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 12px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-soft);
+}
+.result-grade {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  width: 48px;
+  text-align: center;
+}
+.grade-S .result-grade {
+  color: var(--magenta);
+}
+.grade-A .result-grade {
+  color: var(--green);
+}
+.grade-B .result-grade {
+  color: var(--blue);
+}
+.grade-C .result-grade {
+  color: var(--orange);
+}
+.result-note {
+  color: var(--fg-dim);
+  font-size: 13px;
+  margin-top: 4px;
+}

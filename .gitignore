@@ -1,0 +1,8 @@
+node_modules
+dist
+*.local
+.DS_Store
+
+# meow's GPL-licensed tutorial, kept locally as a reference only — not part of
+# this MIT-licensed project, so it's not committed.
+tutor.el
