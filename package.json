@@ -3,7 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "An interactive, vimmer-friendly tutor for the Emacs meow modal editor",
+  "description": "An interactive, vimmer-friendly practice ground for the Emacs meow modal editor",
+  "packageManager": "pnpm@11.6.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
