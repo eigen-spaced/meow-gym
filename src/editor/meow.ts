@@ -81,6 +81,7 @@ export class MeowEngine {
       anchor: { row: 0, col: 0 },
       active: { row: 0, col: 0 },
       kind: null,
+      expandable: false,
       mode: "normal",
       killRing: "",
       killIsLine: false,
@@ -116,6 +117,7 @@ export class MeowEngine {
     this.state.anchor = clone(to);
     this.state.active = clone(to);
     this.state.kind = null;
+    this.state.expandable = false;
   }
 
   // -------------------------------------------------------------------------
@@ -431,17 +433,25 @@ export class MeowEngine {
     const s = this.state;
     const inTok = symbol ? isSymbolChar : isWordChar;
     const wantKind: SelectionKind = symbol ? "symbol" : "word";
-    const extending = s.kind === wantKind && cmp(s.active, s.anchor) >= 0;
+    // Only an *expandable* same-kind selection (from w) extends; a bare e makes
+    // a fresh non-expandable selection, so repeating e moves word-by-word.
+    const extending = s.kind === wantKind && s.expandable;
 
     let p: Pos | null = clone(s.active);
-    if (!extending) {
+    if (extending) {
+      // Grow the active end forward over the next token; keep the anchor.
+      while (p && !inTok(charAt(s.lines, p))) p = nextPos(s.lines, p);
+      while (p && inTok(charAt(s.lines, p))) p = nextPos(s.lines, p);
+      s.active = p ? clone(p) : this.bufferEnd();
+    } else {
+      // Fresh: select the next whole token.
       while (p && !inTok(charAt(s.lines, p))) p = nextPos(s.lines, p);
       s.anchor = p ? clone(p) : clone(s.active);
+      let e: Pos | null = p ? clone(p) : null;
+      while (e && inTok(charAt(s.lines, e))) e = nextPos(s.lines, e);
+      s.active = e ? clone(e) : this.bufferEnd();
+      s.expandable = false;
     }
-    // Skip any gap, then consume the token.
-    while (p && !inTok(charAt(s.lines, p))) p = nextPos(s.lines, p);
-    while (p && inTok(charAt(s.lines, p))) p = nextPos(s.lines, p);
-    s.active = p ? clone(p) : this.bufferEnd();
     s.kind = wantKind;
   }
 
@@ -449,22 +459,40 @@ export class MeowEngine {
     const s = this.state;
     const inTok = symbol ? isSymbolChar : isWordChar;
     const wantKind: SelectionKind = symbol ? "symbol" : "word";
-    const extending = s.kind === wantKind && cmp(s.active, s.anchor) <= 0;
+    const extending = s.kind === wantKind && s.expandable;
 
-    let p: Pos | null = clone(s.active);
-    if (!extending) s.anchor = clone(s.active);
-    // Step back over any gap, then to the start of the token.
-    let prev = prevPos(s.lines, p);
-    while (prev && !inTok(charAt(s.lines, prev))) {
-      p = prev;
+    if (extending) {
+      // Grow the active end backward over the previous token; keep the anchor.
+      let p = clone(s.active);
+      let prev = prevPos(s.lines, p);
+      while (prev && !inTok(charAt(s.lines, prev))) {
+        p = prev;
+        prev = prevPos(s.lines, p);
+      }
       prev = prevPos(s.lines, p);
+      while (prev && inTok(charAt(s.lines, prev))) {
+        p = prev;
+        prev = prevPos(s.lines, p);
+      }
+      s.active = clone(p);
+    } else {
+      // Fresh: select the previous whole token (active at its start).
+      let end = clone(s.active);
+      let prev = prevPos(s.lines, end);
+      while (prev && !inTok(charAt(s.lines, prev))) {
+        end = prev;
+        prev = prevPos(s.lines, end);
+      }
+      let start = clone(end);
+      prev = prevPos(s.lines, start);
+      while (prev && inTok(charAt(s.lines, prev))) {
+        start = prev;
+        prev = prevPos(s.lines, start);
+      }
+      s.anchor = clone(end);
+      s.active = clone(start);
+      s.expandable = false;
     }
-    prev = prevPos(s.lines, p);
-    while (prev && inTok(charAt(s.lines, prev))) {
-      p = prev;
-      prev = prevPos(s.lines, p);
-    }
-    s.active = clone(p);
     s.kind = wantKind;
   }
 
@@ -503,6 +531,7 @@ export class MeowEngine {
     s.anchor = clone(start);
     s.active = end ? clone(end) : this.bufferEnd();
     s.kind = symbol ? "symbol" : "word";
+    s.expandable = true; // w makes an expandable selection; e / b extend it
   }
 
   private bufferEnd(): Pos {
@@ -787,6 +816,7 @@ export class MeowEngine {
     s.anchor = { row, col: 0 };
     s.active = { row, col: s.lines[row].length };
     s.kind = "line";
+    s.expandable = true;
   }
 
   // -------------------------------------------------------------------------

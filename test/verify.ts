@@ -51,7 +51,7 @@ const SOLUTIONS: Record<string, string> = {
   "word-kill": "egegegegege s".replace(/ /g, ""), // walk by word, then kill garbage
   "line-kill": "jxs",
   symbols: "llllllllllllllllllllWs", // 20 × l, then W, s
-  extend: "eees",
+  extend: "wees",
   change: "llllwcdog<Esc>",
   yank: "xyp",
   replace: "fdwyfcwr",
@@ -364,6 +364,31 @@ solveCheck("lisp-surgery", generateLispPuzzle, (p) => {
   } else {
     fail++;
     console.log(`✗  beacon grouping: ${bad} wrong`);
+  }
+}
+
+// e/b move word-by-word (non-expandable); only w makes them extend.
+{
+  const sel = (e: MeowEngine) => {
+    const r = e.selectionRange();
+    return r ? e.state.lines[0].slice(r.start.col, r.end.col) : "";
+  };
+  // bare e e moves to the 2nd word (does NOT accumulate)
+  const a = new MeowEngine(["alpha beta gamma"]);
+  a.feed("e");
+  a.feed("e");
+  const moved = sel(a) === "beta";
+  // w then e extends across both words
+  const b = new MeowEngine(["alpha beta gamma"]);
+  b.feed("w");
+  b.feed("e");
+  const extended = sel(b) === "alpha beta";
+  if (moved && extended) {
+    pass++;
+    console.log("✓  e/b move word-by-word; w then e extends");
+  } else {
+    fail++;
+    console.log(`✗  e-behavior: moved=${moved} (${sel(a)}) extended=${extended} (${sel(b)})`);
   }
 }
 

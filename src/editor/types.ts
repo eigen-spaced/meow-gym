@@ -33,6 +33,12 @@ export interface EditorState {
   anchor: Pos;
   active: Pos;
   kind: SelectionKind;
+  /**
+   * Whether the selection is *expandable* (meow's `(expand . thing)` vs
+   * `(select . thing)`). `w`/`x` make expandable selections that `e`/`b` extend;
+   * a bare `e`/`b` makes a non-expandable one, so repeating it moves word-by-word.
+   */
+  expandable: boolean;
   mode: Mode;
   /** meow's kill-ring; what `p` (yank/paste) pastes. */
   killRing: string;

@@ -144,17 +144,18 @@ export const LESSONS: Lesson[] = [
     id: "extend",
     title: "8 · Extending a selection",
     intro:
-      "Selections grow. After a word selection, pressing `e` again extends it to the next word. You can also expand character-by-character with `H J K L` (the shifted movement keys).\n\nThree junk words lead the line. Select all three at once, then kill them.",
+      "To grow a selection over several words, first **mark** one with `w` — that makes an *expandable* selection. Then each `e` extends it to the next word, and `b` extends back. (A bare `e` with nothing marked just moves word-to-word, selecting one at a time — `w` is what anchors it.) You can also grow character-by-character with `H J K L`.\n\nThree junk words lead the line. Select all three, then kill them.",
     vimNote:
-      "There's no `d3w` here. You build the selection up visibly with repeated `e`, then strike with `s`. What you select is what you get.",
+      "No `d3w` here. Anchor with `w`, extend with `e`/`b` until the selection covers what you want, then strike. What you select is what you get.",
     keys: [
-      { key: "e", desc: "extend to next word" },
-      { key: "H J K L", desc: "expand by character" },
-      { key: "s", desc: "kill" },
+      { key: "w", desc: "mark a word (the anchor)" },
+      { key: "e", desc: "extend to the next word" },
+      { key: "b", desc: "extend back a word" },
+      { key: "s", desc: "kill the selection" },
     ],
     buffer: ["junk junk junk keep this part"],
     goal: { type: "text", target: ["keep this part"] },
-    goalText: 'Select the three "junk" words with e, e, e and kill them.',
+    goalText: "Mark the first junk (w), extend over the next two (e e), then s.",
   },
   {
     id: "expand",
