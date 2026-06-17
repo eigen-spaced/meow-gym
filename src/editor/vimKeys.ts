@@ -47,6 +47,11 @@ export const VIM_HINTS: Record<string, Omit<VimHint, "key">> = {
     meow: "yanks (pastes) the kill-ring — close, but it pastes at the cursor",
     tip: "Pretty similar! Note meow's copy is y (save), and cut is s (kill).",
   },
+  r: {
+    vim: "replace a single character (r then the new char)",
+    meow: "replaces the selection with the kill-ring (paste over)",
+    tip: "Copy with y first, then select a span and r to overwrite it.",
+  },
   y: {
     vim: "start a yank/copy operator (yy, yw)",
     meow: "saves (copies) the current selection — no operator needed",

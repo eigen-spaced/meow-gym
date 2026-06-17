@@ -101,7 +101,9 @@ export function generateFixPuzzle(round: number): Puzzle {
   const words = clean.split(" ");
   const buf = [...words];
   const cls = new Set<string>();
-  let par = 2;
+  // par estimates an efficient meow solution: a word fix is reach + w c <word>
+  // Esc ≈ len + 5; an extra word is reach + w s ≈ 4. (FIX_KEYS / DEL_KEYS.)
+  let par = 1;
 
   // Two word defects on distinct words.
   for (const wi of shuffle(words.map((_, i) => i)).slice(0, 2)) {
@@ -113,21 +115,21 @@ export function generateFixPuzzle(round: number): Puzzle {
           ? scramble(words[wi])
           : pick(JUNK);
     cls.add("t-fix");
-    par += kind === "wrong" ? 4 + words[wi].length : 4;
+    par += words[wi].length + 5;
   }
 
   // Sometimes an extra word to delete.
   if (rand(2) === 0) {
     buf.splice(rand(buf.length + 1), 0, pick(JUNK));
     cls.add("t-del");
-    par += 5;
+    par += 4;
   }
 
   // Guarantee there's something to fix.
   if (buf.join(" ") === clean) {
     buf[0] = typo(words[0]);
     cls.add("t-fix");
-    par += 4;
+    par += words[0].length + 5;
   }
 
   return {
@@ -325,41 +327,37 @@ export function generateOogwayPuzzle(round: number): Puzzle {
   for (const li of shuffle(candidates).slice(0, 2 + (rand(3) === 0 ? 1 : 0))) {
     const words = buf[li].split(" ");
     const kind = pick(["typo", "wrong", "extra", "chunk", "insert"]);
-    if (kind === "typo") {
+    if (kind === "typo" || kind === "wrong") {
       const wi = rand(words.length);
-      words[wi] = typo(words[wi]);
+      const orig = words[wi];
+      words[wi] = kind === "typo" ? typo(orig) : pick(JUNK);
       cls.add("t-fix");
-      par += 4;
-    } else if (kind === "wrong") {
-      const wi = rand(words.length);
-      words[wi] = pick(JUNK);
-      cls.add("t-fix");
-      par += 4 + words[wi].length;
+      par += orig.length + 5; // reach + w c <word> Esc
     } else if (kind === "extra") {
       words.splice(rand(words.length + 1), 0, pick(JUNK));
       cls.add("t-del");
-      par += 5;
+      par += 4; // reach + w s
     } else if (kind === "chunk") {
       const [o, c] = pick(BRACKETS);
       words.splice(1 + rand(words.length - 1), 0, o + pick(JUNK) + c);
       cls.add("t-del");
-      par += 4;
+      par += 4; // reach + o s (block)
     } else {
       // insert: remove a (non-last) word so the player must add it back.
-      words.splice(rand(Math.max(1, words.length - 1)), 1);
+      const removed = words.splice(rand(Math.max(1, words.length - 1)), 1)[0];
       cls.add("t-ins");
-      par += 4;
+      par += removed.length + 4; // reach + i <word> Esc
     }
     buf[li] = words.join(" ");
   }
 
   if (structural === "dupLine") {
     cls.add("t-yank");
-    par += 4;
+    par += 5; // reach + x y p
   } else {
     buf.splice(rand(buf.length + 1), 0, pick(DROP));
     cls.add("t-del");
-    par += 4;
+    par += 4; // reach + x s
   }
 
   return {

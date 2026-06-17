@@ -368,6 +368,9 @@ export class MeowEngine {
       case "p":
         this.paste();
         return true;
+      case "r":
+        this.replace();
+        return true;
 
       // --- history ---
       case "u":
@@ -961,6 +964,44 @@ export class MeowEngine {
     ];
     s.lines.splice(s.active.row, 1, ...newLines);
     this.collapse({ row: s.active.row, col: 0 });
+  }
+
+  /**
+   * meow-replace (r): overwrite the current selection with the kill-ring. The
+   * replaced text is NOT saved to the kill-ring (unlike kill).
+   */
+  private replace(): void {
+    const s = this.state;
+    if (s.kind === null || !s.killRing) return;
+    this.snapshot();
+    const text = s.killRing;
+
+    if (s.kind === "line") {
+      const [a, b] = ordered(s.anchor, s.active);
+      s.lines.splice(a.row, b.row - a.row + 1, ...text.split("\n"));
+      if (s.lines.length === 0) s.lines = [""];
+      this.collapse({ row: a.row, col: 0 });
+      return;
+    }
+
+    const [start, end] = ordered(s.anchor, s.active);
+    this.removeRange(start, end); // discard removed (not saved to kill-ring)
+    const parts = text.split("\n");
+    const line = s.lines[start.row];
+    const before = line.slice(0, start.col);
+    const after = line.slice(start.col);
+    if (parts.length === 1) {
+      s.lines[start.row] = before + text + after;
+      this.collapse({ row: start.row, col: start.col + text.length });
+    } else {
+      const newLines = [
+        before + parts[0],
+        ...parts.slice(1, -1),
+        parts[parts.length - 1] + after,
+      ];
+      s.lines.splice(start.row, 1, ...newLines);
+      this.collapse({ row: start.row, col: 0 });
+    }
   }
 
   private undo(): void {

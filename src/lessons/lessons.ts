@@ -231,4 +231,20 @@ export const LESSONS: Lesson[] = [
     goal: { type: "text", target: ["keep this one"] },
     goalText: "Select a line with x, press 3 to grab three lines, then s.",
   },
+  {
+    id: "replace",
+    title: "14 · Replace",
+    intro:
+      "`r` replaces the current selection with whatever you last copied (`y`) or cut (`s`) — it pastes *over* the selection. Unlike `c`, you don't retype; unlike `p`, it overwrites instead of inserting.\n\nCopy one word and stamp it over another.",
+    vimNote:
+      "In vim `r` replaces a single character (`r` then the new char). In meow `r` overwrites the whole selection with the kill-ring — copy with `y` first, select a span, then `r`.",
+    keys: [
+      { key: "w", desc: "mark the word" },
+      { key: "y", desc: "save (copy) it" },
+      { key: "r", desc: "replace selection with the kill-ring" },
+    ],
+    buffer: ["copy dog onto cat"],
+    goal: { type: "text", target: ["copy dog onto dog"] },
+    goalText: 'Copy "dog" (w y), select "cat", then r to stamp "dog" over it.',
+  },
 ];

@@ -54,6 +54,7 @@ const SOLUTIONS: Record<string, string> = {
   extend: "eees",
   change: "llllwcdog<Esc>",
   yank: "xyp",
+  replace: "fdwyfcwr",
   find: "f,s",
   things: "lllll,rcnew<Esc>",
   expand: "x3s",
@@ -363,6 +364,23 @@ solveCheck("lisp-surgery", generateLispPuzzle, (p) => {
   } else {
     fail++;
     console.log(`✗  beacon grouping: ${bad} wrong`);
+  }
+}
+
+// meow-replace (r): overwrite a selection with the kill-ring, not saving the
+// replaced text.
+{
+  const e = new MeowEngine(["copy dog onto cat"]);
+  for (const k of tokens("fdwyfcwr")) {
+    const shift = k.length === 1 && k !== k.toLowerCase();
+    e.feed(k, shift);
+  }
+  if (e.state.lines[0] === "copy dog onto dog") {
+    pass++;
+    console.log("✓  r replaces the selection with the kill-ring");
+  } else {
+    fail++;
+    console.log(`✗  replace: got ${JSON.stringify(e.state.lines)}`);
   }
 }
 
