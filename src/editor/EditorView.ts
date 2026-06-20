@@ -1,7 +1,7 @@
 import { MeowEngine } from "./meow";
 import type { EditorState, Pos, TargetSpan, VimHint } from "./types";
 import { KEYMAP } from "../app/keymap";
-import { getRelativeNumbers } from "../app/settings";
+import { getRelativeNumbers, getVimHints } from "../app/settings";
 import { escapeHtml } from "../app/html";
 
 function cmp(a: Pos, b: Pos): number {
@@ -125,7 +125,7 @@ export class EditorView {
     this.opts.onKey?.(key);
     this.opts.onChange?.(this.engine.state);
 
-    if (result.vimHint && this.opts.vimHints !== false) {
+    if (result.vimHint && this.opts.vimHints !== false && getVimHints()) {
       this.echoVimHint(result.vimHint);
     } else if (result.echo) {
       this.setEcho(`<span class="echo-prompt">${escapeHtml(result.echo)}</span>`, "info");

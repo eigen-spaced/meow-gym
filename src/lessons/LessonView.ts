@@ -8,12 +8,14 @@ export interface LessonViewCallbacks {
   onComplete: (lessonId: string) => void;
   onNext: () => void;
   hasNext: boolean;
+  /** Switch tabs — used by the graduation CTA and inline `route:` prose links. */
+  onNavigate: (route: string) => void;
 }
 
 /** Renders one lesson: prose, a live editor, and goal tracking. */
 export class LessonView {
   readonly el: HTMLDivElement;
-  private editor: EditorView;
+  private editor?: EditorView;
   private statusEl!: HTMLDivElement;
   private nextBtn!: HTMLButtonElement;
   private completed = false;
@@ -25,14 +27,68 @@ export class LessonView {
     this.el = document.createElement("div");
     this.el.className = "lesson";
 
+    if (lesson.kind === "info") {
+      this.buildInfo();
+      return;
+    }
+
     this.editor = new EditorView({
-      lines: lesson.buffer,
+      lines: lesson.buffer ?? [""],
       bufferName: "*gym*",
       onChange: (s) => this.onChange(s),
     });
 
     this.build();
-    requestAnimationFrame(() => this.editor.focus());
+    requestAnimationFrame(() => this.editor?.focus());
+  }
+
+  /** A prose-only page (welcome / graduation): no editor, no goal. */
+  private buildInfo(): void {
+    const l = this.lesson;
+
+    const header = document.createElement("div");
+    header.className = "lesson-head";
+    header.innerHTML = `<h2>${escapeHtml(l.title)}</h2>`;
+
+    const intro = document.createElement("div");
+    intro.className = "prose";
+    intro.innerHTML = renderMarkup(l.intro);
+    this.wireRouteLinks(intro);
+    this.el.append(header, intro);
+
+    if (l.body) {
+      const body = document.createElement("div");
+      body.className = "prose";
+      body.innerHTML = renderMarkup(l.body);
+      this.wireRouteLinks(body);
+      this.el.append(body);
+    }
+
+    const controls = document.createElement("div");
+    controls.className = "controls";
+
+    const cta = document.createElement("button");
+    cta.className = "btn btn-primary ready";
+    if (this.cb.hasNext) {
+      cta.textContent = "Start the lessons →";
+      cta.addEventListener("click", () => this.cb.onNext());
+    } else {
+      cta.textContent = "Train in the Gym 🥋 →";
+      cta.addEventListener("click", () => this.cb.onNavigate("puzzles"));
+    }
+    controls.append(cta);
+    this.el.append(controls);
+  }
+
+  /** Turn `route:` prose links into in-app tab navigation. */
+  private wireRouteLinks(container: HTMLElement): void {
+    container.querySelectorAll<HTMLAnchorElement>("a[data-route]").forEach(
+      (a) =>
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          this.cb.onNavigate(a.dataset.route!);
+        }),
+    );
   }
 
   private build(): void {
@@ -45,6 +101,7 @@ export class LessonView {
     const intro = document.createElement("div");
     intro.className = "prose";
     intro.innerHTML = renderMarkup(l.intro);
+    this.wireRouteLinks(intro);
 
     this.el.append(header, intro);
 
@@ -60,7 +117,7 @@ export class LessonView {
 
     const keys = document.createElement("div");
     keys.className = "keyref";
-    keys.innerHTML = l.keys
+    keys.innerHTML = (l.keys ?? [])
       .map(
         (k) =>
           `<span class="keyref-item"><kbd>${escapeHtml(
@@ -72,12 +129,12 @@ export class LessonView {
 
     const goal = document.createElement("div");
     goal.className = "goal";
-    goal.innerHTML = `<strong>Goal:</strong> ${escapeHtml(l.goalText)}`;
+    goal.innerHTML = `<strong>Goal:</strong> ${escapeHtml(l.goalText ?? "")}`;
     this.el.append(goal);
 
     const editorWrap = document.createElement("div");
     editorWrap.className = "editor-wrap";
-    editorWrap.append(this.editor.el);
+    editorWrap.append(this.editor!.el);
     this.el.append(editorWrap);
 
     this.statusEl = document.createElement("div");
@@ -92,11 +149,11 @@ export class LessonView {
     resetBtn.textContent = "Reset buffer";
     resetBtn.addEventListener("click", () => {
       this.completed = false;
-      this.editor.reset(l.buffer);
+      this.editor!.reset(l.buffer ?? [""]);
       this.statusEl.textContent = "";
       this.statusEl.className = "status";
       this.updateNextState();
-      this.editor.focus();
+      this.editor!.focus();
     });
 
     this.nextBtn = document.createElement("button");
@@ -117,14 +174,14 @@ export class LessonView {
   }
 
   private onChange(state: EditorState): void {
-    if (this.completed) return;
+    if (this.completed || !this.lesson.goal) return;
     if (checkGoal(this.lesson.goal, state)) {
       this.completed = true;
       this.statusEl.className = "status status-ok";
       this.statusEl.textContent = this.cb.hasNext
         ? "✓ Goal reached. Next lesson when you're ready."
         : "✓ Last lesson cleared — you've got the meow basics.";
-      this.editor.setEcho(
+      this.editor?.setEcho(
         '<span class="echo-ok">Goal reached.</span>',
         "info",
       );

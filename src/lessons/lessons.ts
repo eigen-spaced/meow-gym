@@ -10,16 +10,27 @@ export interface KeyRef {
 export interface Lesson {
   id: string;
   title: string;
-  /** Short intro paragraphs. Supports `code`, **bold**, and "- " bullets. */
+  /** Short intro paragraphs. Supports `code`, **bold**, links, and "- " bullets. */
   intro: string;
+  /**
+   * Page kind. "practice" (default) has a live editor + goal to clear; "info"
+   * is a prose-only page (the welcome intro and the graduation page).
+   */
+  kind?: "practice" | "info";
+  /** Extra prose shown after `intro` on "info" pages. Same markup subset. */
+  body?: string;
   /** A note aimed squarely at recovering vimmers. */
   vimNote?: string;
-  keys: KeyRef[];
-  buffer: string[];
-  goal: Goal;
+  /** Practice fields — present on "practice" lessons, omitted on "info" pages. */
+  keys?: KeyRef[];
+  buffer?: string[];
+  goal?: Goal;
   /** Plain-language description of the objective. */
-  goalText: string;
+  goalText?: string;
 }
+
+/** True for hands-on lessons (the ones that count toward progress). */
+export const isPractice = (l: Lesson): boolean => l.kind !== "info";
 
 // --- the curriculum -------------------------------------------------------
 // Ordered in thematic blocks: basics → insert → delete a char → selection
@@ -27,6 +38,17 @@ export interface Lesson {
 // motions & objects.
 
 export const LESSONS: Lesson[] = [
+  // --- 0 · welcome (prose-only intro) ---
+  {
+    id: "welcome",
+    kind: "info",
+    title: "0 · Welcome",
+    intro:
+      "**meow gym** is a hands-on practice ground for [meow](https://github.com/meow-edit/meow), the modal editing system for **Emacs**. You drill its keys in a real little editor — no setup, no Emacs required — and watch the buffer change as you go.\n\nmeow's big idea is **selection-first** editing: you select a region (a word, a line, a thing between brackets) and *then* act on it. There are no operators to memorise — what you see selected is exactly what gets changed.",
+    body:
+      "Each lesson gives you a buffer, a goal, and the handful of keys you need. Clear the goal and move on. When you've finished the lessons, head to the **Gym** to drill what you've learned against timed, generated challenges.\n\n**Designed for vimmers — open to everyone.** If you're coming from vim, the lessons call out every key where your muscle memory will misfire (the orange *for vimmers* notes), and the editor pops up a gentle nudge when you hit a vim habit.\n\nNot a vim user? You can ignore all of that. Flip **vim hints** off in the top bar and the nudges disappear — the lessons still work perfectly on their own.\n\nLinks to learn more:\n- [meow on GitHub](https://github.com/meow-edit/meow) — the project, install instructions, and full docs\n- [meow's cheatsheet & concepts](https://github.com/meow-edit/meow/blob/master/CHEATSHEET.org)\n\nReady? Start with lesson 1.",
+  },
+
   // --- basics ---
   {
     id: "modes",
@@ -257,5 +279,16 @@ export const LESSONS: Lesson[] = [
     buffer: ["call(old)"],
     goal: { type: "text", target: ["call(new)"] },
     goalText: 'Select inside the parens with , r, then change "old" to "new".',
+  },
+
+  // --- graduation (prose-only outro) ---
+  {
+    id: "graduation",
+    kind: "info",
+    title: "✦ You did it",
+    intro:
+      "**Congratulations — you've finished the tutor!** 🎉\n\nYou now know the whole core loop: modes and motion, building and refining a selection, and acting on it with change, kill, copy, paste, replace, find, and text objects. That's the meow muscle — *select, then act*.",
+    body:
+      "**Next step: keep the muscle warm.** Reading about the keys isn't the same as having them in your fingers — that's what the **Gym** is for. It throws timed and randomly-generated challenges at you so the motions become automatic:\n- **Fix, Navigate, Delete, Golf** — focused drills, one skill at a time\n- **Master Shifu** 🥋 and **Master Oogway** 🐢 — timed gauntlets that mix everything together\n\nForgotten a key? The [**Keymap** tab](route:keymap) is your `C-h b` — the full binding reference, any time.\n\nWhen you're ready to use meow for real, install it in Emacs from [the meow project](https://github.com/meow-edit/meow). See you in the Gym.",
   },
 ];

@@ -1,7 +1,7 @@
 // Drives each lesson through the engine with an intended solution and asserts
 // the goal is reached. Run: npm run verify
 import { MeowEngine } from "../src/editor/meow";
-import { LESSONS, checkGoal } from "../src/lessons/lessons";
+import { LESSONS, isPractice, checkGoal } from "../src/lessons/lessons";
 import { PUZZLES, checkPuzzle, tasksOf } from "../src/puzzles/puzzles";
 import {
   generateFixPuzzle,
@@ -64,18 +64,19 @@ let pass = 0;
 let fail = 0;
 
 for (const lesson of LESSONS) {
+  if (!isPractice(lesson)) continue; // prose-only pages have no goal to solve
   const sol = SOLUTIONS[lesson.id];
   if (sol === undefined) {
     console.log(`?  ${lesson.id}: no solution defined`);
     fail++;
     continue;
   }
-  const engine = new MeowEngine(lesson.buffer);
+  const engine = new MeowEngine(lesson.buffer!);
   for (const key of tokens(sol)) {
     const shift = key.length === 1 && key !== key.toLowerCase();
     engine.feed(key, shift);
   }
-  const ok = checkGoal(lesson.goal, engine.state);
+  const ok = checkGoal(lesson.goal!, engine.state);
   if (ok) {
     pass++;
     console.log(`✓  ${lesson.id}`);

@@ -170,6 +170,14 @@ nav {
   margin: 0 0 10px;
   padding-left: 20px;
 }
+.prose a {
+  color: var(--purple);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose a:hover {
+  color: var(--fg);
+}
 .muted {
   color: var(--fg-dim);
 }

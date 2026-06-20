@@ -1,12 +1,19 @@
 import "./style.css";
-import { LESSONS } from "./lessons/lessons";
+import { LESSONS, isPractice } from "./lessons/lessons";
 import { LessonView } from "./lessons/LessonView";
 import { GROUPS } from "./puzzles/puzzles";
 import { GroupView } from "./puzzles/GroupView";
 import { GauntletView } from "./puzzles/GauntletView";
 import { keymapView } from "./app/KeymapView";
-import { getRelativeNumbers, setRelativeNumbers } from "./app/settings";
+import {
+  getRelativeNumbers,
+  setRelativeNumbers,
+  getVimHints,
+  setVimHints,
+} from "./app/settings";
 import { loadJson, saveJson } from "./app/storage";
+
+const PRACTICE_COUNT = LESSONS.filter(isPractice).length;
 
 type Route = "tutor" | "puzzles" | "keymap";
 
@@ -78,7 +85,7 @@ class App {
     const nav = document.createElement("nav");
     const tabs: [Route, string][] = [
       ["tutor", "Tutor"],
-      ["puzzles", "Puzzles"],
+      ["puzzles", "Gym"],
       ["keymap", "Keymap"],
     ];
     for (const [route, label] of tabs) {
@@ -100,6 +107,18 @@ class App {
       this.render();
     });
     nav.append(rel);
+
+    // Vim-habit nudges toggle — turn off if you're not coming from vim.
+    const vh = document.createElement("button");
+    const vhOn = getVimHints();
+    vh.className = "tab rel-toggle" + (vhOn ? " active" : "");
+    vh.textContent = vhOn ? "vim hints ✓" : "vim hints";
+    vh.title = "Show 'vim habit' nudges in the editor (off for non-vimmers)";
+    vh.addEventListener("click", () => {
+      setVimHints(!getVimHints());
+      this.render();
+    });
+    nav.append(vh);
 
     header.append(brand, nav);
     return header;
@@ -129,10 +148,12 @@ class App {
     const aside = document.createElement("aside");
     aside.className = "sidebar";
 
-    const count = this.completed.size;
+    const count = LESSONS.filter(
+      (l) => isPractice(l) && this.completed.has(l.id),
+    ).length;
     const head = document.createElement("div");
     head.className = "sidebar-head";
-    head.innerHTML = `Lessons <span class="progress-pill">${count}/${LESSONS.length}</span>`;
+    head.innerHTML = `Lessons <span class="progress-pill">${count}/${PRACTICE_COUNT}</span>`;
     aside.append(head);
 
     const list = document.createElement("ul");
@@ -142,9 +163,13 @@ class App {
       const btn = document.createElement("button");
       btn.className =
         "lesson-link" + (i === this.lessonIndex ? " active" : "");
-      const done = this.completed.has(lesson.id);
+      const mark = !isPractice(lesson)
+        ? "✦"
+        : this.completed.has(lesson.id)
+          ? "✓"
+          : "○";
       btn.innerHTML =
-        `<span class="check">${done ? "✓" : "○"}</span> ` +
+        `<span class="check">${mark}</span> ` +
         `<span>${lesson.title}</span>`;
       btn.addEventListener("click", () => {
         this.lessonIndex = i;
@@ -179,6 +204,7 @@ class App {
           this.render();
         }
       },
+      onNavigate: (route) => this.setRoute(route as Route),
     });
     this.activeLessonView = view;
     main.append(view.el);
